@@ -68,7 +68,7 @@ def dp(request):
     po=Profile.objects.get(username=uno)
     d={'uno':uno, 'po':po}
     return render(request,'dp.html',d)
-
+  
 @login_required
 def change_password(request):
     if request.method=='POST':
@@ -85,12 +85,50 @@ def forget_password(request):
         email=request.POST['email']
         uno=User.objects.get(email=email)
         rn = random.randint(0, 999999)
+        global x
         x = str(rn).zfill(6)
         send_mail('OTP GENERATED',
                       x,
                       'rakeshgangaraju.234@gmail.com',
                       [uno.email],
                       fail_silently=False)
-        return HttpResponse('OTP sent successfully')
+        return render(request,'match_otp.html')
     return render(request,'forget_password.html')
+    
+def match_otp(request):
+    if request.method=='POST':
+        otp=request.POST['otp']
+        if x==otp:
+            return render(request,'fp.html')
+        else:
+            return HttpResponse('Invalid OTP')
+def fp(request):
+    if request.method=='POST':
+        pw=request.POST['pw']
+        un=request.POST['un']
+        luno=User.objects.filter(username=un)
+        if luno:
+            uno=luno[0]
+            uno.set_password(pw)
+            uno.save()
+            return HttpResponse('Password Changed Successfully')
+        else:
+            return HttpResponse('Invalid Username')
+    return render(request,'change_password.html')
+
+
+
+@login_required
+def change_profile(request):
+    if request.method=='POST' and request.FILES:
+        un=request.session['username']
+        uno=User.objects.get(username=un)
+        pp=request.FILES['mm']
+        po=Profile.objects.get(username=uno)
+        po.profile_pic=pp
+        po.save()
+        return HttpResponseRedirect(reverse('dp'))
+
+    return render(request,'change_profile.html')  
+
     
